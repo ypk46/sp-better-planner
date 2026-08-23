@@ -1,0 +1,26 @@
+{
+  "name": "better-planner",
+  "version": "0.1.0",
+  "description": "Super Productivity plugin: an improved day-planning view",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "package": "node scripts/build-plugin.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "archiver": "^7.0.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.59.1",
+    "vite": "^7.2.4"
+  }
+}

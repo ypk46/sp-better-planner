@@ -1,0 +1,37 @@
+{
+  "id": "better-planner",
+  "name": "Better Planner",
+  "version": "0.1.0",
+  "manifestVersion": 1,
+  "minSupVersion": "18.20.1",
+  "description": "A wide 3-day planning view. Tasks you plan here show up in the built-in Planner and Today view too; the reverse isn't fully guaranteed for tasks added via the built-in Planner's own inline add box (see plugin docs).",
+  "author": "",
+  "permissions": [
+    "getTasks",
+    "getCurrentContextTasks",
+    "getArchivedTasks",
+    "getAllProjects",
+    "getAllTags",
+    "addTask",
+    "updateTask",
+    "deleteTask",
+    "updateTag",
+    "showSnack",
+    "openDialog",
+    "notify",
+    "persistDataSynced",
+    "loadSyncedData"
+  ],
+  "hooks": [
+    "taskCreated",
+    "taskUpdate",
+    "anyTaskUpdate",
+    "taskComplete",
+    "taskDelete",
+    "currentTaskChange"
+  ],
+  "iFrame": true,
+  "sidePanel": false,
+  "isSkipMenuEntry": false,
+  "icon": "calendar_check"
+}
