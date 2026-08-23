@@ -59,3 +59,7 @@ SP_BUNDLED_PLUGINS_DIR=../super-productivity/assets/bundled-plugins/better-plann
 
 Publishing a [GitHub Release](../../releases) automatically builds the plugin and attaches
 `better-planner-vX.Y.Z.zip`.
+
+## License
+
+[MIT](LICENSE) © Yuyi Kimura
