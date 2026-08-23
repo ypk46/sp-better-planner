@@ -9,10 +9,11 @@ import {
 } from '../data';
 import type { BetterPlannerLocalState } from '../persistence';
 import { attachDayDropZone } from '../dnd';
-import { renderAddTaskRow, renderTaskRow, type TaskRowCallbacks } from './taskRow';
+import { renderAddTaskRow, type NewTaskInput } from './addTaskInput';
+import { renderTaskRow, type TaskRowCallbacks } from './taskRow';
 
 export interface DayColumnCallbacks extends TaskRowCallbacks {
-  onAddTask: (dayKey: string, title: string) => void;
+  onAddTask: (dayKey: string, input: NewTaskInput) => void;
   onDropOnDay: (taskId: string, dayKey: string, beforeTaskId: string | null) => void;
 }
 
@@ -53,7 +54,7 @@ export const renderDayColumn = (
     ? rows
     : [el('div', { className: 'bp-empty-drop', text: 'Drop a task here' })];
   listChildren.push(
-    renderAddTaskRow('Add task', (title) => callbacks.onAddTask(bucket.dayKey, title)),
+    renderAddTaskRow('Add task', data, (input) => callbacks.onAddTask(bucket.dayKey, input)),
   );
 
   const listEl = el('div', { className: 'bp-day-task-list' }, listChildren);

@@ -5,6 +5,7 @@ import { dayKeyToDate, toDayKey } from './dateUtils';
 import { buildPlannerData, getDayBucket, type PlannerData } from './data';
 import { loadState, saveState, type BetterPlannerLocalState } from './persistence';
 import type { ViewState } from './state';
+import type { NewTaskInput } from './views/addTaskInput';
 import { renderToolbar } from './views/toolbar';
 import { renderUnscheduledRail } from './views/unscheduledRail';
 import { renderThreeDayView } from './views/threeDay';
@@ -27,12 +28,21 @@ const onToggleDone = (task: Task): void => {
   void PluginAPI.updateTask(task.id, { isDone: !task.isDone }).then(render);
 };
 
-const onAddTaskForDay = (dayKey: string, title: string): void => {
-  void PluginAPI.addTask({ title, dueDay: dayKey }).then(render);
+const onAddTaskForDay = (dayKey: string, input: NewTaskInput): void => {
+  void PluginAPI.addTask({
+    title: input.title,
+    dueDay: dayKey,
+    projectId: input.projectId,
+    tagIds: input.tagIds,
+  }).then(render);
 };
 
-const onAddUnplannedTask = (title: string): void => {
-  void PluginAPI.addTask({ title }).then(render);
+const onAddUnplannedTask = (input: NewTaskInput): void => {
+  void PluginAPI.addTask({
+    title: input.title,
+    projectId: input.projectId,
+    tagIds: input.tagIds,
+  }).then(render);
 };
 
 const onDropOnDay = (taskId: string, dayKey: string, beforeTaskId: string | null): void => {

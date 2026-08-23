@@ -3,10 +3,11 @@ import { el } from '../dom';
 import { formatMonthDay } from '../dateUtils';
 import type { PlannerData } from '../data';
 import { attachUnplanDropZone } from '../dnd';
-import { renderAddTaskRow, renderTaskRow, type TaskRowCallbacks } from './taskRow';
+import { renderAddTaskRow, type NewTaskInput } from './addTaskInput';
+import { renderTaskRow, type TaskRowCallbacks } from './taskRow';
 
 export interface RailCallbacks extends TaskRowCallbacks {
-  onAddTask: (title: string) => void;
+  onAddTask: (input: NewTaskInput) => void;
   onDropToUnplan: (taskId: string) => void;
 }
 
@@ -58,7 +59,7 @@ export const renderUnscheduledRail = (
   }
 
   children.push(section('Unscheduled', data.unplanned, data, currentTaskId, callbacks));
-  children.push(renderAddTaskRow('Add task', callbacks.onAddTask));
+  children.push(renderAddTaskRow('Add task', data, callbacks.onAddTask));
 
   const rail = el('aside', { className: 'bp-rail' }, children);
   attachUnplanDropZone(rail, callbacks.onDropToUnplan);
