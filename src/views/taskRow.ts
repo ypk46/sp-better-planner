@@ -7,6 +7,7 @@ import { attachDragSource } from '../dnd';
 
 export interface TaskRowCallbacks {
   onToggleDone: (task: Task) => void;
+  onContextMenu: (task: Task, event: MouseEvent) => void;
 }
 
 export const renderTaskRow = (
@@ -76,5 +77,9 @@ export const renderTaskRow = (
     body,
   ]);
   attachDragSource(row, task.id);
+  row.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    callbacks.onContextMenu(task, event);
+  });
   return row;
 };

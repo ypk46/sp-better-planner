@@ -9,6 +9,7 @@ import type { NewTaskInput } from './views/addTaskInput';
 import { renderToolbar } from './views/toolbar';
 import { renderUnscheduledRail } from './views/unscheduledRail';
 import { renderThreeDayView } from './views/threeDay';
+import { renderContextMenu } from './views/contextMenu';
 
 const rootEl = document.getElementById('root');
 if (!rootEl) throw new Error('#root not found');
@@ -17,6 +18,9 @@ const root: HTMLElement = rootEl;
 let localState: BetterPlannerLocalState = { version: 1, dayOrder: {} };
 let plannerData: PlannerData | null = null;
 let currentTaskId: string | null = null;
+let contextMenuTask: Task | null = null;
+let contextMenuPos: { x: number; y: number } | null = null;
+let teardownContextMenu: (() => void) | null = null;
 const view: ViewState = { mode: '3-day', anchorDate: new Date() };
 
 const refetch = async (): Promise<void> => {
@@ -81,6 +85,34 @@ const onDropToUnplan = (taskId: string): void => {
   void PluginAPI.updateTask(taskId, { dueDay: null, dueWithTime: null }).then(refreshAndRender);
 };
 
+const closeContextMenu = (): void => {
+  contextMenuTask = null;
+  contextMenuPos = null;
+  render();
+};
+
+const onContextMenu = (task: Task, event: MouseEvent): void => {
+  contextMenuTask = task;
+  contextMenuPos = { x: event.clientX, y: event.clientY };
+  render();
+};
+
+const onDeleteTask = (task: Task): void => {
+  void PluginAPI.openDialog({
+    title: 'Delete task',
+    content: `Delete "${task.title}"? This can't be undone.`,
+    buttons: [
+      { label: 'Cancel' },
+      {
+        label: 'Delete',
+        color: 'warn',
+        raised: true,
+        onClick: () => PluginAPI.deleteTask(task.id),
+      },
+    ],
+  });
+};
+
 const renderComingSoon = (): HTMLElement =>
   el('div', { className: 'bp-coming-soon' }, [
     el('p', { text: '1-Day timeline view is coming soon.' }),
@@ -88,6 +120,8 @@ const renderComingSoon = (): HTMLElement =>
 
 const render = (): void => {
   if (!plannerData) return;
+  teardownContextMenu?.();
+  teardownContextMenu = null;
   clear(root);
 
   const todayKey = toDayKey(new Date());
@@ -111,6 +145,7 @@ const render = (): void => {
 
   const rail = renderUnscheduledRail(plannerData, currentTaskId, {
     onToggleDone,
+    onContextMenu,
     onAddTask: onAddUnplannedTask,
     onDropToUnplan,
   });
@@ -119,6 +154,7 @@ const render = (): void => {
     view.mode === '3-day'
       ? renderThreeDayView(view.anchorDate, todayKey, plannerData, localState, currentTaskId, {
           onToggleDone,
+          onContextMenu,
           onAddTask: onAddTaskForDay,
           onDropOnDay,
         })
@@ -126,6 +162,18 @@ const render = (): void => {
 
   const contentRow = el('div', { className: 'bp-content-row' }, [rail, main]);
   root.append(el('div', { className: 'bp-app' }, [toolbar, contentRow]));
+
+  if (contextMenuTask && contextMenuPos) {
+    const task = contextMenuTask;
+    const { element, destroy } = renderContextMenu(
+      contextMenuPos.x,
+      contextMenuPos.y,
+      [{ label: 'Delete task', danger: true, onClick: () => onDeleteTask(task) }],
+      closeContextMenu,
+    );
+    teardownContextMenu = destroy;
+    root.append(element);
+  }
 };
 
 const refreshAndRender = (): void => {
