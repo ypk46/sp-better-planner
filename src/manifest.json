@@ -28,7 +28,8 @@
     "anyTaskUpdate",
     "taskComplete",
     "taskDelete",
-    "currentTaskChange"
+    "currentTaskChange",
+    "projectListUpdate"
   ],
   "iFrame": true,
   "sidePanel": false,

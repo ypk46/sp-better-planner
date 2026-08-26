@@ -9,6 +9,8 @@ export interface PlannerData {
   projectsById: Map<string, Project>;
   tagsById: Map<string, Tag>;
   todayTagTaskIds: Set<string>;
+  /** Live order of the TODAY tag's taskIds, as stored by the host (source of truth for today's manual order). */
+  todayTagOrder: string[];
   /** Non-done tasks whose assigned day is strictly before today. */
   overdue: Task[];
   /** Non-done tasks with no dueDay, no dueWithTime, and not in the TODAY tag. */
@@ -35,7 +37,8 @@ export const buildPlannerData = (appState: PluginAppState, todayKey: string): Pl
   const projectsById = new Map(Object.values(appState.projects).map((p) => [p.id, p]));
   const tagsById = new Map(Object.values(appState.tags).map((t) => [t.id, t]));
   const todayTag = tagsById.get(TODAY_TAG_ID);
-  const todayTagTaskIds = new Set(todayTag?.taskIds ?? []);
+  const todayTagOrder = todayTag?.taskIds ?? [];
+  const todayTagTaskIds = new Set(todayTagOrder);
 
   const overdue: Task[] = [];
   const unplanned: Task[] = [];
@@ -51,7 +54,7 @@ export const buildPlannerData = (appState: PluginAppState, todayKey: string): Pl
     unplanned.push(task);
   }
 
-  return { allTasks, projectsById, tagsById, todayTagTaskIds, overdue, unplanned };
+  return { allTasks, projectsById, tagsById, todayTagTaskIds, todayTagOrder, overdue, unplanned };
 };
 
 export const getDayBucket = (

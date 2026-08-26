@@ -56,29 +56,38 @@ const onDropOnDay = (taskId: string, dayKey: string, beforeTaskId: string | null
   if (!task) return;
 
   const todayKey = toDayKey(new Date());
-  const bucket = getDayBucket(data, dayKeyToDate(dayKey), todayKey, localState.dayOrder[dayKey]);
+  const isToday = dayKey === todayKey;
+  const persistedOrder = isToday ? data.todayTagOrder : localState.dayOrder[dayKey];
+  const bucket = getDayBucket(data, dayKeyToDate(dayKey), todayKey, persistedOrder);
   const others = bucket.unscheduled.map((t) => t.id).filter((id) => id !== taskId);
   const insertAt = beforeTaskId ? others.indexOf(beforeTaskId) : -1;
   const newOrder =
     insertAt === -1
       ? [...others, taskId]
       : [...others.slice(0, insertAt), taskId, ...others.slice(insertAt)];
-  localState.dayOrder[dayKey] = newOrder;
 
-  const writes: Promise<unknown>[] = [saveState(localState)];
+  const needsTaskUpdate = task.dueDay !== dayKey || task.dueWithTime != null;
+  const todayOrderChanged =
+    isToday &&
+    (bucket.unscheduled.length !== newOrder.length ||
+      bucket.unscheduled.some((t, i) => t.id !== newOrder[i]));
 
-  if (task.dueDay !== dayKey || task.dueWithTime != null) {
-    writes.push(PluginAPI.updateTask(taskId, { dueDay: dayKey, dueWithTime: null }));
+  const localWrites: Promise<unknown>[] = [];
+  if (!isToday) {
+    localState.dayOrder[dayKey] = newOrder;
+    localWrites.push(saveState(localState));
   }
 
-  if (dayKey === todayKey) {
-    const todayTagOrder = newOrder.filter((id) => data.todayTagTaskIds.has(id));
-    if (todayTagOrder.length) {
-      writes.push(PluginAPI.updateTag('TODAY', { taskIds: todayTagOrder }));
+  const hostWrites = (async (): Promise<void> => {
+    if (needsTaskUpdate) {
+      await PluginAPI.updateTask(taskId, { dueDay: dayKey, dueWithTime: null });
     }
-  }
+    if (todayOrderChanged) {
+      await PluginAPI.updateTag('TODAY', { taskIds: newOrder });
+    }
+  })();
 
-  void Promise.all(writes).then(refreshAndRender);
+  void Promise.all([...localWrites, hostWrites]).then(refreshAndRender);
 };
 
 const onDropToUnplan = (taskId: string): void => {
@@ -189,6 +198,7 @@ PluginAPI.onReady?.(async () => {
   PluginAPI.registerHook(PluginAPI.Hooks.TASK_CREATED, refreshAndRender);
   PluginAPI.registerHook(PluginAPI.Hooks.TASK_DELETE, refreshAndRender);
   PluginAPI.registerHook(PluginAPI.Hooks.TASK_COMPLETE, refreshAndRender);
+  PluginAPI.registerHook(PluginAPI.Hooks.PROJECT_LIST_UPDATE, refreshAndRender);
   PluginAPI.registerHook(PluginAPI.Hooks.CURRENT_TASK_CHANGE, (payload) => {
     currentTaskId = payload.current?.id ?? null;
     render();

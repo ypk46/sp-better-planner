@@ -73,7 +73,9 @@ export const renderThreeDayView = (
 ): HTMLElement => {
   const columns = [0, 1, 2].map((offset) => {
     const date = addDays(anchorDate, offset);
-    const bucket = getDayBucket(data, date, todayKey, localState.dayOrder[toDayKey(date)]);
+    const dayKey = toDayKey(date);
+    const persistedOrder = dayKey === todayKey ? data.todayTagOrder : localState.dayOrder[dayKey];
+    const bucket = getDayBucket(data, date, todayKey, persistedOrder);
     return renderDayColumn(bucket, todayKey, data, currentTaskId, callbacks);
   });
   return el('div', { className: 'bp-day-columns' }, columns);
