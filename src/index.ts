@@ -5,7 +5,7 @@ import { dayKeyToDate, toDayKey } from './dateUtils';
 import { buildPlannerData, getDayBucket, type PlannerData } from './data';
 import { loadState, saveState, type BetterPlannerLocalState } from './persistence';
 import type { ViewState } from './state';
-import type { NewTaskInput } from './views/addTaskInput';
+import type { ChipInputValue } from './views/chipInput';
 import { renderToolbar } from './views/toolbar';
 import { renderUnscheduledRail } from './views/unscheduledRail';
 import { renderThreeDayView } from './views/threeDay';
@@ -18,6 +18,7 @@ const root: HTMLElement = rootEl;
 let localState: BetterPlannerLocalState = { version: 1, dayOrder: {} };
 let plannerData: PlannerData | null = null;
 let currentTaskId: string | null = null;
+let editingTaskId: string | null = null;
 let contextMenuTask: Task | null = null;
 let contextMenuPos: { x: number; y: number } | null = null;
 let teardownContextMenu: (() => void) | null = null;
@@ -32,7 +33,7 @@ const onToggleDone = (task: Task): void => {
   void PluginAPI.updateTask(task.id, { isDone: !task.isDone }).then(render);
 };
 
-const onAddTaskForDay = (dayKey: string, input: NewTaskInput): void => {
+const onAddTaskForDay = (dayKey: string, input: ChipInputValue): void => {
   void PluginAPI.addTask({
     title: input.title,
     dueDay: dayKey,
@@ -41,7 +42,7 @@ const onAddTaskForDay = (dayKey: string, input: NewTaskInput): void => {
   }).then(render);
 };
 
-const onAddUnplannedTask = (input: NewTaskInput): void => {
+const onAddUnplannedTask = (input: ChipInputValue): void => {
   void PluginAPI.addTask({
     title: input.title,
     projectId: input.projectId,
@@ -106,6 +107,30 @@ const onContextMenu = (task: Task, event: MouseEvent): void => {
   render();
 };
 
+const onEditTask = (task: Task): void => {
+  editingTaskId = task.id;
+  render();
+};
+
+const onCancelEdit = (): void => {
+  editingTaskId = null;
+  render();
+};
+
+const onSaveEdit = (taskId: string, value: ChipInputValue): void => {
+  const original = plannerData?.allTasks.find((t) => t.id === taskId);
+  const tagIds =
+    original?.tagIds.includes('TODAY') && !value.tagIds.includes('TODAY')
+      ? [...value.tagIds, 'TODAY']
+      : value.tagIds;
+  editingTaskId = null;
+  void PluginAPI.updateTask(taskId, {
+    title: value.title,
+    projectId: value.projectId,
+    tagIds,
+  }).then(render);
+};
+
 const onDeleteTask = (task: Task): void => {
   void PluginAPI.openDialog({
     title: 'Delete task',
@@ -152,21 +177,33 @@ const render = (): void => {
     },
   });
 
-  const rail = renderUnscheduledRail(plannerData, currentTaskId, {
+  const rail = renderUnscheduledRail(plannerData, currentTaskId, editingTaskId, {
     onToggleDone,
     onContextMenu,
+    onSaveEdit,
+    onCancelEdit,
     onAddTask: onAddUnplannedTask,
     onDropToUnplan,
   });
 
   const main =
     view.mode === '3-day'
-      ? renderThreeDayView(view.anchorDate, todayKey, plannerData, localState, currentTaskId, {
-          onToggleDone,
-          onContextMenu,
-          onAddTask: onAddTaskForDay,
-          onDropOnDay,
-        })
+      ? renderThreeDayView(
+          view.anchorDate,
+          todayKey,
+          plannerData,
+          localState,
+          currentTaskId,
+          editingTaskId,
+          {
+            onToggleDone,
+            onContextMenu,
+            onSaveEdit,
+            onCancelEdit,
+            onAddTask: onAddTaskForDay,
+            onDropOnDay,
+          },
+        )
       : renderComingSoon();
 
   const contentRow = el('div', { className: 'bp-content-row' }, [rail, main]);
@@ -177,7 +214,10 @@ const render = (): void => {
     const { element, destroy } = renderContextMenu(
       contextMenuPos.x,
       contextMenuPos.y,
-      [{ label: 'Delete task', danger: true, onClick: () => onDeleteTask(task) }],
+      [
+        { label: 'Edit', onClick: () => onEditTask(task) },
+        { label: 'Delete task', danger: true, onClick: () => onDeleteTask(task) },
+      ],
       closeContextMenu,
     );
     teardownContextMenu = destroy;
@@ -186,7 +226,9 @@ const render = (): void => {
 };
 
 const refreshAndRender = (): void => {
-  void refetch().then(render);
+  void refetch().then(() => {
+    if (!editingTaskId) render();
+  });
 };
 
 PluginAPI.onReady?.(async () => {
@@ -201,6 +243,6 @@ PluginAPI.onReady?.(async () => {
   PluginAPI.registerHook(PluginAPI.Hooks.PROJECT_LIST_UPDATE, refreshAndRender);
   PluginAPI.registerHook(PluginAPI.Hooks.CURRENT_TASK_CHANGE, (payload) => {
     currentTaskId = payload.current?.id ?? null;
-    render();
+    if (!editingTaskId) render();
   });
 });

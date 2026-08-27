@@ -322,6 +322,10 @@ body {
   opacity: 0.4;
 }
 
+.bp-row--editing {
+  align-items: center;
+}
+
 .bp-grip {
   color: var(--text-color-muted, #bbb);
   font-size: var(--bp-text-sm);

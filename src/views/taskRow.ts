@@ -4,22 +4,28 @@ import { formatDuration, msToMinutes } from '../dateUtils';
 import { resolveProjectColor } from '../colors';
 import type { PlannerData } from '../data';
 import { attachDragSource } from '../dnd';
+import { createChipInput, type ChipInputValue } from './chipInput';
 
 export interface TaskRowCallbacks {
   onToggleDone: (task: Task) => void;
   onContextMenu: (task: Task, event: MouseEvent) => void;
+  onSaveEdit: (taskId: string, value: ChipInputValue) => void;
+  onCancelEdit: () => void;
 }
 
 export const renderTaskRow = (
   task: Task,
   data: PlannerData,
   currentTaskId: string | null,
+  editingTaskId: string | null,
   callbacks: TaskRowCallbacks,
   metaOverride?: string,
 ): HTMLElement => {
+  const isEditing = task.id === editingTaskId;
   const classes = ['bp-row'];
   if (task.id === currentTaskId) classes.push('bp-row--active');
   if (task.isDone) classes.push('bp-row--done');
+  if (isEditing) classes.push('bp-row--editing');
 
   const checkbox = el('button', {
     className: 'bp-checkbox',
@@ -30,6 +36,24 @@ export const renderTaskRow = (
     event.stopPropagation();
     callbacks.onToggleDone(task);
   });
+
+  if (isEditing) {
+    const chipInput = createChipInput({
+      data,
+      initialTitle: task.title,
+      initialProjectId: task.projectId,
+      initialTagIds: task.tagIds.filter((id) => id !== 'TODAY'),
+      onCommit: (value) => callbacks.onSaveEdit(task.id, value),
+      onCancel: callbacks.onCancelEdit,
+    });
+    const body = el('div', { className: 'bp-row-body' }, [chipInput.element]);
+    queueMicrotask(() => chipInput.focus());
+
+    return el('div', { className: classes.join(' '), attrs: { 'data-task-id': task.id } }, [
+      checkbox,
+      body,
+    ]);
+  }
 
   const title = el('span', { className: 'bp-row-title', text: task.title });
   const minutes = msToMinutes(task.timeEstimate);

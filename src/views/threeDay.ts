@@ -9,11 +9,12 @@ import {
 } from '../data';
 import type { BetterPlannerLocalState } from '../persistence';
 import { attachDayDropZone } from '../dnd';
-import { renderAddTaskRow, type NewTaskInput } from './addTaskInput';
+import { renderAddTaskRow } from './addTaskInput';
+import type { ChipInputValue } from './chipInput';
 import { renderTaskRow, type TaskRowCallbacks } from './taskRow';
 
 export interface DayColumnCallbacks extends TaskRowCallbacks {
-  onAddTask: (dayKey: string, input: NewTaskInput) => void;
+  onAddTask: (dayKey: string, input: ChipInputValue) => void;
   onDropOnDay: (taskId: string, dayKey: string, beforeTaskId: string | null) => void;
 }
 
@@ -46,10 +47,13 @@ export const renderDayColumn = (
   todayKey: string,
   data: PlannerData,
   currentTaskId: string | null,
+  editingTaskId: string | null,
   callbacks: DayColumnCallbacks,
 ): HTMLElement => {
   const tasks = [...bucket.scheduled, ...bucket.unscheduled];
-  const rows = tasks.map((task) => renderTaskRow(task, data, currentTaskId, callbacks));
+  const rows = tasks.map((task) =>
+    renderTaskRow(task, data, currentTaskId, editingTaskId, callbacks),
+  );
   const listChildren: HTMLElement[] = rows.length
     ? rows
     : [el('div', { className: 'bp-empty-drop', text: 'Drop a task here' })];
@@ -69,6 +73,7 @@ export const renderThreeDayView = (
   data: PlannerData,
   localState: BetterPlannerLocalState,
   currentTaskId: string | null,
+  editingTaskId: string | null,
   callbacks: DayColumnCallbacks,
 ): HTMLElement => {
   const columns = [0, 1, 2].map((offset) => {
@@ -76,7 +81,7 @@ export const renderThreeDayView = (
     const dayKey = toDayKey(date);
     const persistedOrder = dayKey === todayKey ? data.todayTagOrder : localState.dayOrder[dayKey];
     const bucket = getDayBucket(data, date, todayKey, persistedOrder);
-    return renderDayColumn(bucket, todayKey, data, currentTaskId, callbacks);
+    return renderDayColumn(bucket, todayKey, data, currentTaskId, editingTaskId, callbacks);
   });
   return el('div', { className: 'bp-day-columns' }, columns);
 };

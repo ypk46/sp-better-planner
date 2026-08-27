@@ -3,11 +3,12 @@ import { el } from '../dom';
 import { formatMonthDay } from '../dateUtils';
 import type { PlannerData } from '../data';
 import { attachUnplanDropZone } from '../dnd';
-import { renderAddTaskRow, type NewTaskInput } from './addTaskInput';
+import { renderAddTaskRow } from './addTaskInput';
+import type { ChipInputValue } from './chipInput';
 import { renderTaskRow, type TaskRowCallbacks } from './taskRow';
 
 export interface RailCallbacks extends TaskRowCallbacks {
-  onAddTask: (input: NewTaskInput) => void;
+  onAddTask: (input: ChipInputValue) => void;
   onDropToUnplan: (taskId: string) => void;
 }
 
@@ -28,6 +29,7 @@ const section = (
   tasks: Task[],
   data: PlannerData,
   currentTaskId: string | null,
+  editingTaskId: string | null,
   callbacks: RailCallbacks,
   metaFor?: (task: Task) => string,
 ): HTMLElement => {
@@ -36,7 +38,7 @@ const section = (
     countBadge(tasks.length),
   ]);
   const rows = tasks.map((task) =>
-    renderTaskRow(task, data, currentTaskId, callbacks, metaFor?.(task)),
+    renderTaskRow(task, data, currentTaskId, editingTaskId, callbacks, metaFor?.(task)),
   );
   return el('div', { className: 'bp-rail-section' }, [header, ...rows]);
 };
@@ -44,6 +46,7 @@ const section = (
 export const renderUnscheduledRail = (
   data: PlannerData,
   currentTaskId: string | null,
+  editingTaskId: string | null,
   callbacks: RailCallbacks,
 ): HTMLElement => {
   const header = el('div', { className: 'bp-rail-header' }, [
@@ -54,11 +57,21 @@ export const renderUnscheduledRail = (
 
   if (data.overdue.length) {
     children.push(
-      section('Overdue', data.overdue, data, currentTaskId, callbacks, overdueSinceLabel),
+      section(
+        'Overdue',
+        data.overdue,
+        data,
+        currentTaskId,
+        editingTaskId,
+        callbacks,
+        overdueSinceLabel,
+      ),
     );
   }
 
-  children.push(section('Unscheduled', data.unplanned, data, currentTaskId, callbacks));
+  children.push(
+    section('Unscheduled', data.unplanned, data, currentTaskId, editingTaskId, callbacks),
+  );
   children.push(renderAddTaskRow('Add task', data, callbacks.onAddTask));
 
   const rail = el('aside', { className: 'bp-rail' }, children);
