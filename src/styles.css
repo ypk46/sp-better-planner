@@ -323,7 +323,7 @@ body {
 }
 
 .bp-row--editing {
-  align-items: center;
+  align-items: flex-start;
 }
 
 .bp-grip {
@@ -431,23 +431,19 @@ body {
 }
 
 .bp-add-input-wrap {
-  position: relative;
-}
-
-.bp-add-chips-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
   border: 1px solid var(--c-primary, #ec407a);
   border-radius: var(--bp-radius-md);
   padding: 5px var(--bp-space-2);
   background: var(--card-bg, #fff);
 }
 
+.bp-add-input-row {
+  position: relative;
+}
+
 .bp-add-input {
-  flex: 1;
-  min-width: 80px;
+  display: block;
+  width: 100%;
   border: none;
   outline: none;
   padding: 2px 0;
@@ -455,6 +451,14 @@ body {
   font-size: var(--bp-text-md);
   background: transparent;
   color: var(--text-color, #222);
+}
+
+.bp-add-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
 }
 
 .bp-chip {

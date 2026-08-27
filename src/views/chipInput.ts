@@ -62,11 +62,13 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
   }) as HTMLInputElement;
   input.value = options.initialTitle ?? '';
 
-  const chipsRow = el('div', { className: 'bp-add-chips-row' }, [input]);
   const dropdown = el('div', { className: 'bp-mention-dropdown' });
   dropdown.hidden = true;
 
-  const element = el('div', { className: 'bp-add-input-wrap' }, [chipsRow, dropdown]);
+  const inputRow = el('div', { className: 'bp-add-input-row' }, [input, dropdown]);
+  const chipsRow = el('div', { className: 'bp-add-chips-row' });
+
+  const element = el('div', { className: 'bp-add-input-wrap' }, [inputRow, chipsRow]);
 
   const makeChip = (label: string, color: string, onRemove: () => void): HTMLElement => {
     const dot = el('span', { className: 'bp-dot' });
@@ -82,32 +84,31 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
   };
 
   const renderChips = (): void => {
-    chipsRow.querySelectorAll('.bp-chip').forEach((chip) => chip.remove());
+    clear(chipsRow);
     if (projectId) {
       const project = data.projectsById.get(projectId);
       if (project) {
-        chipsRow.insertBefore(
+        chipsRow.append(
           makeChip(project.title, resolveProjectColor(project), () => {
             projectId = null;
             renderChips();
             input.focus();
           }),
-          input,
         );
       }
     }
     for (const id of tagIds) {
       const tag = data.tagsById.get(id);
       if (!tag) continue;
-      chipsRow.insertBefore(
+      chipsRow.append(
         makeChip(`#${tag.title}`, resolveTagColor(tag), () => {
           tagIds.splice(tagIds.indexOf(id), 1);
           renderChips();
           input.focus();
         }),
-        input,
       );
     }
+    chipsRow.hidden = chipsRow.children.length === 0;
   };
 
   const closeDropdown = (): void => {
