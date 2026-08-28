@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest a new feature or improvement for Better Planner
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! Describe the problem you're trying to solve — that's more useful than prescribing a specific solution.
+
+        Search existing requests first: https://github.com/ypk46/sp-better-planner/issues?q=is%3Aissue+label%3Aenhancement
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: What are you trying to do that Better Planner currently makes hard or impossible?
+      placeholder: 'I want to plan a whole week at once, but the 3-Day view only shows...'
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would help?
+      description: The outcome you'd like to see. Don't worry about implementation details — describe the experience.
+      placeholder: 'It would be great if I could switch to a 7-Day view and drag tasks across the whole week...'
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Any workarounds you're using today, or other approaches that could solve the same problem.
+    validations:
+      required: false

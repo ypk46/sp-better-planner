@@ -1,0 +1,55 @@
+name: Bug report
+description: Report something that isn't working as expected in Better Planner
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report! Please fill out the fields below so it can be reproduced quickly.
+
+        Search existing issues first to avoid duplicates: https://github.com/ypk46/sp-better-planner/issues?q=is%3Aissue+label%3Abug
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected to happen instead.
+      placeholder: 'When I do X, I expect Y, but instead I see Z...'
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: A minimal set of steps that reliably triggers the bug.
+      placeholder: |
+        1. Open the Better Planner tab
+        2. Drag "Task A" from Wed to Thu
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Better Planner version
+      description: Found in the zip filename you installed, or Settings → Plugins. Use "unknown" if you can't find it.
+      placeholder: '0.1.0'
+    validations:
+      required: true
+  - type: input
+    id: sp-version
+    attributes:
+      label: Super Productivity version
+      description: The Super Productivity version you're running the plugin in.
+      placeholder: '12.x.x'
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: |
+        Paste any relevant console output or drag in screenshots.
+        No private data please — redact task titles/content you don't want shared.
+      render: shell
+    validations:
+      required: false

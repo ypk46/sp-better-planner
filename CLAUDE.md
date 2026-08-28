@@ -9,11 +9,6 @@ standalone app. It renders inside an iframe hosted by the Super Productivity hos
 a "Better Planner" nav tab: a wide, multi-day planning view (3-Day columns today, with a 1-Day
 timeline view still a placeholder — see `renderComingSoon` in `src/index.ts`).
 
-Read `docs/plugin-spec.md` before making any change that touches how tasks are read, written,
-or day-assigned — it documents verified (not assumed) behavior of the host app's plugin API and
-reducers, including a data-model gotcha described below. It's the source of truth for "why" this
-plugin is built the way it is.
-
 ## Commands
 
 ```bash
@@ -96,7 +91,7 @@ both ESLint (`eslint.config.js` ignores) and Prettier (`.prettierignore`).
 - `src/colors.ts` — resolves a stable display color for a project/tag, falling back to a
   hash-based palette pick when the host doesn't provide one.
 
-### The `dueDay` vs. `PlannerState.days` gotcha (read `docs/plugin-spec.md` §4 for full detail)
+### The `dueDay` vs. `PlannerState.days` gotcha
 
 The host app has **two independent mechanisms** for "which day is this task on": the
 plugin-visible `task.dueDay` field, and a separate NgRx `PlannerState.days` entity that is
@@ -118,9 +113,9 @@ non-today days.
   (`onDropOnDay` in `src/index.ts`); other days' ordering is plugin-local only (`dayOrder` in
   `persistence.ts`) since the host exposes no API to persist order within a future day.
 
-The day-bucketing priority order this plugin follows (see `taskDayKey` in `src/data.ts` and
-§4.3 of the spec) is: `dueWithTime` (timed) → `dueDay` → membership in the `TODAY` tag →
-unplanned. Follow this same priority order in any new code that classifies a task's day.
+The day-bucketing priority order this plugin follows (see `taskDayKey` in `src/data.ts`) is:
+`dueWithTime` (timed) → `dueDay` → membership in the `TODAY` tag → unplanned. Follow this same
+priority order in any new code that classifies a task's day.
 
 ### Manifest & permissions
 
@@ -131,7 +126,7 @@ you add a call to a new `PluginAPI` method or register a new hook, add it to bot
 enforced by the host) but must still accurately reflect what the plugin does, since it's shown to
 the user at install time.
 
-Known, deliberate host-API limitations that shape scope (don't try to work around these — see
-`docs/plugin-spec.md` §5 for the verified detail): no per-future-day ordering API (hence
+Known, deliberate host-API limitations that shape scope (don't try to work around these): no
+per-future-day ordering API (hence
 plugin-local ordering), no deadline fields on the plugin `Task` type (deadline chips are out of
 scope), and `updateTask()` rejects `parentId`/`subTaskIds` (no subtask reparenting through it).

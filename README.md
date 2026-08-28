@@ -1,7 +1,12 @@
 # Better Planner
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/ypk46/sp-better-planner)](../../releases/latest)
+
 A [Super Productivity](https://super-productivity.com/) plugin that adds a wide, multi-day
 planning view — an alternative to the built-in Planner's narrow, infinitely-scrolling columns.
+
+![Better Planner screenshot](assets/screenshot.png)
 
 Better Planner adds its own nav tab with:
 
@@ -31,7 +36,7 @@ placeholder.
 
 ## Development
 
-Requires Node.js 20+.
+Requires Node.js 22+ (see `.nvmrc`).
 
 ```bash
 npm install
@@ -57,8 +62,19 @@ SP_BUNDLED_PLUGINS_DIR=../super-productivity/assets/bundled-plugins/better-plann
 
 ## Releasing
 
-Publishing a [GitHub Release](../../releases) automatically builds the plugin and attaches
-`better-planner-vX.Y.Z.zip`.
+Version bumps and changelog entries are managed automatically by
+[Release Please](https://github.com/googleapis/release-please) based on
+[Conventional Commit](https://www.conventionalcommits.org/) messages on `main`. It keeps a
+release pull request up to date with the next version and changelog; merging that PR tags the
+release and publishes a [GitHub Release](../../releases), which in turn triggers a workflow
+that builds, packages, and uploads `better-planner-vX.Y.Z.zip` to that release.
+
+## Contributing
+
+This project isn't accepting code contributions (pull requests) right now, but bug reports and
+feature requests are very welcome — please [open an issue](../../issues/new/choose). See
+[CONTRIBUTING.md](CONTRIBUTING.md) for details, and [SECURITY.md](SECURITY.md) if you're
+reporting a security issue.
 
 ## License
 
