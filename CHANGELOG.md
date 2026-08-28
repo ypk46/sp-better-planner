@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/ypk46/sp-better-planner/compare/v0.2.0...v0.2.1) (2026-08-28)
+
+
+### Bug Fixes
+
+* Attach release zip via release-please workflow, not release event ([#3](https://github.com/ypk46/sp-better-planner/issues/3)) ([d971d2f](https://github.com/ypk46/sp-better-planner/commit/d971d2fd775f8048653e4fc9ecde53644c153464))
+
 ## [0.2.0](https://github.com/ypk46/sp-better-planner/compare/v0.1.0...v0.2.0) (2026-08-28)
 
 
