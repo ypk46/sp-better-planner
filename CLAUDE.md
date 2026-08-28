@@ -33,10 +33,16 @@ SP_BUNDLED_PLUGINS_DIR=../super-productivity/assets/bundled-plugins/better-plann
 There is no live hot-reload of a _running_ plugin instance inside the host app — after a build,
 reload the host app or toggle the plugin off/on in Settings → Plugins.
 
-Releasing: publishing a GitHub Release triggers `.github/workflows/release.yml`, which syncs the
-version from the release tag into `package.json` and `src/manifest.json`, runs `npm run
-package`, and uploads the resulting zip as a release asset. Version bumps are driven by the git
-tag, not by hand-editing `manifest.json`/`package.json` locally.
+Releasing: `.github/workflows/release-please.yml` runs `release-please` on every push to `main`,
+which opens/updates a release PR that bumps `package.json`/`src/manifest.json` from Conventional
+Commits and maintains `CHANGELOG.md`. Merging that PR makes release-please tag the repo and
+publish a GitHub Release; a second job in the same workflow (gated on release-please's
+`release_created` output) then checks out that tag, runs `npm run package`, and uploads the
+resulting zip as a release asset. This has to live in the *same* workflow as release-please
+rather than a separate workflow triggered by the `release` event — GitHub Actions doesn't let
+events produced by the default `GITHUB_TOKEN` trigger other workflows, so a `release: [published]`
+trigger would never fire here. Version bumps are driven by release-please from commit messages,
+not by hand-editing `manifest.json`/`package.json` locally.
 
 ## Architecture
 
