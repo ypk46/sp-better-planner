@@ -38,7 +38,7 @@ which opens/updates a release PR that bumps `package.json`/`src/manifest.json` f
 Commits and maintains `CHANGELOG.md`. Merging that PR makes release-please tag the repo and
 publish a GitHub Release; a second job in the same workflow (gated on release-please's
 `release_created` output) then checks out that tag, runs `npm run package`, and uploads the
-resulting zip as a release asset. This has to live in the *same* workflow as release-please
+resulting zip as a release asset. This has to live in the _same_ workflow as release-please
 rather than a separate workflow triggered by the `release` event — GitHub Actions doesn't let
 events produced by the default `GITHUB_TOKEN` trigger other workflows, so a `release: [published]`
 trigger would never fire here. Version bumps are driven by release-please from commit messages,
