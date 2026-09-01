@@ -15,6 +15,7 @@
     "addTask",
     "updateTask",
     "deleteTask",
+    "addTag",
     "updateTag",
     "showSnack",
     "openDialog",

@@ -16,12 +16,12 @@ const hashString = (input: string): number => {
   return Math.abs(hash);
 };
 
-const fallbackFor = (id: string): string =>
-  FALLBACK_COLORS[hashString(id) % FALLBACK_COLORS.length];
+export const fallbackColorFor = (seed: string): string =>
+  FALLBACK_COLORS[hashString(seed) % FALLBACK_COLORS.length];
 
 export const resolveProjectColor = (project: Project | undefined): string => {
   if (!project) return FALLBACK_COLORS[0];
-  return project.theme?.primary || fallbackFor(project.id);
+  return project.theme?.primary || fallbackColorFor(project.id);
 };
 
-export const resolveTagColor = (tag: Tag): string => tag.color || fallbackFor(tag.id);
+export const resolveTagColor = (tag: Tag): string => tag.color || fallbackColorFor(tag.id);
