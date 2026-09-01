@@ -473,6 +473,12 @@ body {
   white-space: nowrap;
 }
 
+.bp-chip--new {
+  background: transparent;
+  border: 1px dashed var(--divider-color, #e0e0e0);
+  padding: 1px 3px 1px 7px;
+}
+
 .bp-chip-remove {
   border: none;
   background: transparent;
@@ -508,6 +514,26 @@ body {
 
 .bp-mention-item--active {
   background: var(--bp-primary-muted);
+}
+
+.bp-mention-item--create {
+  color: var(--text-color-muted, #888);
+}
+
+.bp-mention-create-icon {
+  display: inline-flex;
+  justify-content: center;
+  width: 8px;
+  font-size: var(--bp-text-md);
+  line-height: 1;
+}
+
+.bp-mention-create-label {
+  color: var(--text-color-muted, #888);
+}
+
+.bp-mention-item--create > :last-child {
+  color: var(--text-color, #222);
 }
 
 .bp-context-menu {

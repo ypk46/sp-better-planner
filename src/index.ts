@@ -33,21 +33,58 @@ const onToggleDone = (task: Task): void => {
   void PluginAPI.updateTask(task.id, { isDone: !task.isDone }).then(render);
 };
 
+/**
+ * Turns the chip input's unresolved `#` mentions into real tag ids, creating any that don't exist
+ * yet. Views never touch PluginAPI, so this is where a `newTagTitles` entry becomes a tag.
+ */
+const resolveTagIds = async (value: ChipInputValue): Promise<string[]> => {
+  if (!value.newTagTitles.length) return value.tagIds;
+  try {
+    // Read fresh rather than using plannerData.tagsById: that snapshot can be stale, and this
+    // last-moment check is what stops us duplicating a tag added since the last refetch.
+    const existing = await PluginAPI.getAllTags();
+    const byTitle = new Map(existing.map((t) => [t.title.trim().toLowerCase(), t.id]));
+    const ids = [...value.tagIds];
+    for (const title of value.newTagTitles) {
+      const trimmed = title.trim();
+      let id = byTitle.get(trimmed.toLowerCase());
+      if (!id) {
+        // Title only — the host owns color/theme defaults, and resolveTagColor's `var(--bp-*)`
+        // strings are plugin-local CSS that would be meaningless as a host-side Tag.color.
+        id = await PluginAPI.addTag({ title: trimmed });
+        byTitle.set(trimmed.toLowerCase(), id);
+      }
+      if (!ids.includes(id)) ids.push(id);
+    }
+    return ids;
+  } catch (err) {
+    PluginAPI.log.err('Failed to create tag(s)', err);
+    PluginAPI.showSnack({ msg: 'Could not create new tag(s)', type: 'ERROR' });
+    return value.tagIds;
+  }
+};
+
 const onAddTaskForDay = (dayKey: string, input: ChipInputValue): void => {
-  void PluginAPI.addTask({
-    title: input.title,
-    dueDay: dayKey,
-    projectId: input.projectId,
-    tagIds: input.tagIds,
-  }).then(render);
+  void (async () => {
+    await PluginAPI.addTask({
+      title: input.title,
+      dueDay: dayKey,
+      projectId: input.projectId,
+      tagIds: await resolveTagIds(input),
+    });
+    refreshAndRender();
+  })();
 };
 
 const onAddUnplannedTask = (input: ChipInputValue): void => {
-  void PluginAPI.addTask({
-    title: input.title,
-    projectId: input.projectId,
-    tagIds: input.tagIds,
-  }).then(render);
+  void (async () => {
+    await PluginAPI.addTask({
+      title: input.title,
+      projectId: input.projectId,
+      tagIds: await resolveTagIds(input),
+    });
+    refreshAndRender();
+  })();
 };
 
 const onDropOnDay = (taskId: string, dayKey: string, beforeTaskId: string | null): void => {
@@ -119,16 +156,21 @@ const onCancelEdit = (): void => {
 
 const onSaveEdit = (taskId: string, value: ChipInputValue): void => {
   const original = plannerData?.allTasks.find((t) => t.id === taskId);
-  const tagIds =
-    original?.tagIds.includes('TODAY') && !value.tagIds.includes('TODAY')
-      ? [...value.tagIds, 'TODAY']
-      : value.tagIds;
   editingTaskId = null;
-  void PluginAPI.updateTask(taskId, {
-    title: value.title,
-    projectId: value.projectId,
-    tagIds,
-  }).then(render);
+  void (async () => {
+    const resolved = await resolveTagIds(value);
+    // The chip input hides the TODAY tag, so re-add it here or saving would unplan the task.
+    const tagIds =
+      original?.tagIds.includes('TODAY') && !resolved.includes('TODAY')
+        ? [...resolved, 'TODAY']
+        : resolved;
+    await PluginAPI.updateTask(taskId, {
+      title: value.title,
+      projectId: value.projectId,
+      tagIds,
+    });
+    refreshAndRender();
+  })();
 };
 
 const onDeleteTask = (task: Task): void => {

@@ -1,11 +1,13 @@
 import { el, clear } from '../dom';
-import { resolveProjectColor, resolveTagColor } from '../colors';
+import { fallbackColorFor, resolveProjectColor, resolveTagColor } from '../colors';
 import type { PlannerData } from '../data';
 
 export interface ChipInputValue {
   title: string;
   projectId: string | null;
   tagIds: string[];
+  /** `#` mentions that matched no existing tag; the caller creates these and merges the ids. */
+  newTagTitles: string[];
 }
 
 export interface ChipInputHandle {
@@ -22,11 +24,9 @@ interface ActiveMention {
   query: string;
 }
 
-interface Candidate {
-  id: string;
-  label: string;
-  color: string;
-}
+type Candidate =
+  | { kind: 'existing'; id: string; label: string; color: string }
+  | { kind: 'create'; title: string };
 
 export interface ChipInputOptions {
   data: PlannerData;
@@ -37,6 +37,8 @@ export interface ChipInputOptions {
   onCommit: (value: ChipInputValue) => void;
   onCancel: () => void;
 }
+
+const norm = (value: string): string => value.trim().toLowerCase();
 
 /** Finds the `@`/`#` token the caret is currently inside of, if any. */
 const detectMention = (value: string, caret: number): ActiveMention | null => {
@@ -53,6 +55,7 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
   const { data } = options;
   let projectId: string | null = options.initialProjectId ?? null;
   const tagIds: string[] = [...(options.initialTagIds ?? [])];
+  const newTagTitles: string[] = [];
   let mention: ActiveMention | null = null;
   let highlightIndex = 0;
 
@@ -70,7 +73,25 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
 
   const element = el('div', { className: 'bp-add-input-wrap' }, [inputRow, chipsRow]);
 
-  const makeChip = (label: string, color: string, onRemove: () => void): HTMLElement => {
+  /** Existing, selectable tag whose title equals `title` (case-insensitively). */
+  const findTagByTitle = (title: string): { id: string } | undefined =>
+    Array.from(data.tagsById.values()).find(
+      (t) => t.id !== 'TODAY' && norm(t.title) === norm(title),
+    );
+
+  const addNewTagTitle = (title: string): void => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    if (newTagTitles.some((t) => norm(t) === norm(trimmed))) return;
+    newTagTitles.push(trimmed);
+  };
+
+  const makeChip = (
+    label: string,
+    color: string,
+    onRemove: () => void,
+    isNew = false,
+  ): HTMLElement => {
     const dot = el('span', { className: 'bp-dot' });
     dot.style.backgroundColor = color;
     const removeBtn = el('button', {
@@ -80,7 +101,11 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
     });
     removeBtn.addEventListener('mousedown', (event) => event.preventDefault());
     removeBtn.addEventListener('click', onRemove);
-    return el('span', { className: 'bp-chip' }, [dot, label, removeBtn]);
+    return el('span', { className: isNew ? 'bp-chip bp-chip--new' : 'bp-chip' }, [
+      dot,
+      label,
+      removeBtn,
+    ]);
   };
 
   const renderChips = (): void => {
@@ -108,6 +133,20 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
         }),
       );
     }
+    for (const title of newTagTitles) {
+      chipsRow.append(
+        makeChip(
+          `#${title}`,
+          fallbackColorFor(title),
+          () => {
+            newTagTitles.splice(newTagTitles.indexOf(title), 1);
+            renderChips();
+            input.focus();
+          },
+          true,
+        ),
+      );
+    }
     chipsRow.hidden = chipsRow.children.length === 0;
   };
 
@@ -124,14 +163,31 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
       return Array.from(data.projectsById.values())
         .filter((p) => p.title.toLowerCase().includes(query))
         .slice(0, 8)
-        .map((p) => ({ id: p.id, label: p.title, color: resolveProjectColor(p) }));
+        .map((p) => ({
+          kind: 'existing' as const,
+          id: p.id,
+          label: p.title,
+          color: resolveProjectColor(p),
+        }));
     }
-    return Array.from(data.tagsById.values())
+    const candidates: Candidate[] = Array.from(data.tagsById.values())
       .filter(
         (t) => t.id !== 'TODAY' && !tagIds.includes(t.id) && t.title.toLowerCase().includes(query),
       )
       .slice(0, 8)
-      .map((t) => ({ id: t.id, label: t.title, color: resolveTagColor(t) }));
+      .map((t) => ({
+        kind: 'existing' as const,
+        id: t.id,
+        label: t.title,
+        color: resolveTagColor(t),
+      }));
+    // Offer creation only for a novel name: the filter above is a substring match, so an exact
+    // hit on an existing tag (or on an already-pending new one) must not also offer a duplicate.
+    const wanted = mention.query.trim();
+    if (wanted && !findTagByTitle(wanted) && !newTagTitles.some((t) => norm(t) === norm(wanted))) {
+      candidates.push({ kind: 'create', title: wanted });
+    }
+    return candidates;
   };
 
   const renderDropdown = (): void => {
@@ -143,15 +199,24 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
     }
     highlightIndex = Math.min(highlightIndex, candidates.length - 1);
     candidates.forEach((candidate, i) => {
-      const dot = el('span', { className: 'bp-dot' });
-      dot.style.backgroundColor = candidate.color;
-      const item = el(
-        'div',
-        {
-          className: `bp-mention-item${i === highlightIndex ? ' bp-mention-item--active' : ''}`,
-        },
-        [dot, candidate.label],
-      );
+      const classes = ['bp-mention-item'];
+      if (i === highlightIndex) classes.push('bp-mention-item--active');
+      let children: (HTMLElement | string)[];
+      if (candidate.kind === 'create') {
+        classes.push('bp-mention-item--create');
+        children = [
+          el('span', { className: 'bp-mention-create-icon', attrs: { 'aria-hidden': 'true' } }, [
+            '+',
+          ]),
+          el('span', { className: 'bp-mention-create-label', text: 'Create tag' }),
+          `"${candidate.title}"`,
+        ];
+      } else {
+        const dot = el('span', { className: 'bp-dot' });
+        dot.style.backgroundColor = candidate.color;
+        children = [dot, candidate.label];
+      }
+      const item = el('div', { className: classes.join(' ') }, children);
       item.addEventListener('mousedown', (event) => {
         event.preventDefault();
         acceptCandidate(candidate);
@@ -167,7 +232,10 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
     const caret = input.selectionStart ?? input.value.length;
     input.value = input.value.slice(0, start) + input.value.slice(caret);
     input.setSelectionRange(start, start);
-    if (kind === '@') {
+    if (candidate.kind === 'create') {
+      // Only ever produced for the `#` trigger.
+      addNewTagTitle(candidate.title);
+    } else if (kind === '@') {
       projectId = candidate.id;
     } else if (!tagIds.includes(candidate.id)) {
       tagIds.push(candidate.id);
@@ -184,6 +252,28 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
     renderDropdown();
   };
 
+  /**
+   * Resolves any `#token` still sitting in the raw text (never accepted through the dropdown) into
+   * an existing tag id or a pending new-tag title, and strips it out of the returned title. `@`
+   * tokens are deliberately left alone — projects are never created from an unmatched mention.
+   */
+  const absorbLeftoverTags = (raw: string): string => {
+    const names: string[] = [];
+    const stripped = raw.replace(/(^|\s)#([^\s#@]+)/g, (_match, lead: string, name: string) => {
+      names.push(name);
+      return lead;
+    });
+    for (const name of names) {
+      const existing = findTagByTitle(name);
+      if (existing) {
+        if (!tagIds.includes(existing.id)) tagIds.push(existing.id);
+      } else {
+        addNewTagTitle(name);
+      }
+    }
+    return stripped.replace(/\s+/g, ' ').trim();
+  };
+
   // Calling onCommit/onCancel typically removes `input` from the DOM (directly, or via a
   // re-render once an async save resolves). Removing a focused element forces a synchronous
   // native `blur`, which would otherwise re-enter `commit` through the blur listener below —
@@ -192,10 +282,15 @@ export const createChipInput = (options: ChipInputOptions): ChipInputHandle => {
 
   const commit = (): void => {
     if (settled) return;
-    const title = input.value.trim();
+    const title = absorbLeftoverTags(input.value);
     settled = true;
     if (title) {
-      options.onCommit({ title, projectId, tagIds: [...tagIds] });
+      options.onCommit({
+        title,
+        projectId,
+        tagIds: [...tagIds],
+        newTagTitles: [...newTagTitles],
+      });
     } else {
       options.onCancel();
     }
