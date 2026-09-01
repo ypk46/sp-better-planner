@@ -1,7 +1,7 @@
 {
   "id": "better-planner",
   "name": "Better Planner",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "manifestVersion": 1,
   "minSupVersion": "18.20.1",
   "description": "A wide 3-day planning view. Tasks you plan here show up in the built-in Planner and Today view too; the reverse isn't fully guaranteed for tasks added via the built-in Planner's own inline add box (see plugin docs).",
