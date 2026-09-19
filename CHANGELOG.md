@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/ypk46/sp-better-planner/compare/v0.2.1...v0.3.0) (2026-09-01)
+
+
+### Features
+
+* Add support for creating new tags within task editor ([#5](https://github.com/ypk46/sp-better-planner/issues/5)) ([1db271f](https://github.com/ypk46/sp-better-planner/commit/1db271faea4a34c4c90bcd04e8c9bbe005550828))
+
 ## [0.2.1](https://github.com/ypk46/sp-better-planner/compare/v0.2.0...v0.2.1) (2026-08-28)
 
 
