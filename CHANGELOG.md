@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/ypk46/sp-better-planner/compare/v0.3.0...v0.3.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* Prevent host UI kit from stretching task checkboxes ([#7](https://github.com/ypk46/sp-better-planner/issues/7)) ([2a953e3](https://github.com/ypk46/sp-better-planner/commit/2a953e3bf41df1d179fdc2b17e76636065ff02da))
+
 ## [0.3.0](https://github.com/ypk46/sp-better-planner/compare/v0.2.1...v0.3.0) (2026-09-01)
 
 
